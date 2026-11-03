@@ -4,7 +4,7 @@ const endpoint = 'https://tiqidcoyvfdotjbfqgjn.supabase.co/rest/v1/pablo_observa
 const levels = ['Je bloque','Je cherche encore','Je peux expliquer'];
 const esLevels = ['Expresa bloqueo','Tiene dudas','Se ve capaz de explicarlo'];
 const esc = s => String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const security = {'Cache-Control':'private, no-store','Content-Security-Policy':"default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'",'Referrer-Policy':'no-referrer','X-Content-Type-Options':'nosniff'};
+const security = {'Cache-Control':'private, no-store','Content-Security-Policy':"default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'",'Referrer-Policy':'same-origin','X-Content-Type-Options':'nosniff'};
 const css = 'body{margin:0;background:#f6f4ec;color:#183b33;font:18px/1.55 system-ui}main{max-width:680px;margin:auto;padding:32px 20px}header{border-bottom:2px solid #276b56;padding-bottom:14px;letter-spacing:.12em;font-size:.83em;font-weight:700}article,fieldset{background:white;border:1px solid #cbd8cf;border-radius:15px;padding:20px;margin:18px 0}h1{font: bold clamp(2rem,6vw,3rem)/1.1 Georgia}label,textarea,select{display:block;margin:9px 0}textarea,select{box-sizing:border-box;width:100%;font:inherit;padding:9px;border:1px solid #71877d;border-radius:7px}button,.btn{display:inline-block;background:#175c49;color:white;border:0;border-radius:8px;padding:11px 17px;font:inherit;margin:5px 5px 5px 0;text-decoration:none}a{color:#165b47}small{color:#456459}blockquote{margin:10px 0;border-left:3px solid #97bdae;padding-left:12px;white-space:pre-wrap;overflow-wrap:anywhere}';
 function page(title,body,status=200,lang='fr') {
  return new Response('<!doctype html><html lang="'+lang+'"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+esc(title)+' · Pablo Math Lab</title><style>'+css+'</style><main><header>PABLO MATH LAB</header><h1>'+esc(title)+'</h1>'+body+'</main></html>',{status,headers:{...security,'Content-Type':'text/html; charset=utf-8'}});
@@ -30,7 +30,12 @@ export async function handle(req,role,db) {
  if (!role || (pathname==='/parents'&&role!=='parent')) return page('Accès privé','',403);
  if (!['/','/atelier','/parents'].includes(pathname)) return page('Page inconnue','',404);
  if(req.method!=='GET' && !(req.method==='POST' && pathname==='/atelier')) return page('Méthode refusée','',405);
- if(req.method==='POST' && req.headers.get('origin')!==origin) return page('Origine refusée','',403);
+ if(req.method==='POST') {
+  const source=req.headers.get('Origin');
+  // Older open forms may omit Origin or serialize it as null.
+  const trustedNavigation=(!source || source==='null') && req.headers.get('Sec-Fetch-Site')==='same-origin';
+  if(source!==origin && !trustedNavigation) return page('Origine refusée','<p>Rouvre le problème depuis l’atelier pour envoyer ta réponse.</p>'+link('/atelier','Retour au problème'),403);
+ }
  const rows=await db.read();
  if(pathname==='/parents') return report(rows);
  const i=lessons.findIndex((_,n)=>!rows.some(r=>r.item===n&&r.phase===1));
