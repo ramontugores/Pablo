@@ -1,7 +1,7 @@
 {
   "name": "pablo",
+  "main": "src/worker.mjs",
   "compatibility_date": "2026-11-03",
-  "assets": {
-    "directory": "./public"
-  }
+  "preview_urls": false,
+  "observability": { "enabled": false }
 }
