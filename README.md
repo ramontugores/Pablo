@@ -1,9 +1,12 @@
-
 # Pablo Math Lab
+Atelier privé de calcul littéral de 5ème. Siete sesiones orientativas de dos preguntas, sin cronómetro. El primer intento queda registrado antes de la intervención del tutor. El alumno puede retomar desde el último envío. El informe para padres en /parents muestra evidencia cualitativa, nivel de ayuda y un criterio de observación por actividad. Las pistas son locales y deterministas. Las respuestas abiertas se revisan en familia.
 
-Private adaptive learning platform for mathematics and physics.
+## Despliegue en el Worker existente
+1. Usar únicamente el Worker pablo y el proyecto Supabase tiqidcoyvfdotjbfqgjn. La migración en supabase/migrations ya está aplicada en ese proyecto.
+2. En Cloudflare, revisar la aplicación Access que protege el dominio actual. Permitir solo las identidades familiares. Configurar en el Worker ACCESS_ISSUER (https://EQUIPO.cloudflareaccess.com sin barra final) y ACCESS_AUD (Application Audience de esa aplicación).
+3. Configurar como secretos del Worker PARENT_EMAILS (correos de los padres separados por comas), STUDENT_EMAILS (identidad exclusiva de Pablo) y SUPABASE_SECRET_KEY (clave de servidor sb_secret_ del proyecto de Pablo). Utilizar identidades Access distintas para separar el informe. Un padre también puede acompañar la sesión con su cuenta. Todos trabajan sobre el único cuaderno familiar.
+4. Ejecutar node --test con Node 22 o posterior. Revisar el PR y desplegar la rama aprobada con la integración Cloudflare existente o npx wrangler deploy desde este repositorio. Conservar las rutas y políticas Access existentes. El Worker comprueba el JWT incluso en rutas alternativas.
+5. Comprobar en una ventana privada que Access exige identificación. Con el alumno, abrir /atelier y verificar que /parents devuelve 403. Con un padre, verificar el informe inicialmente vacío. Para probar escrituras sin alterar el diagnóstico real, usar las pruebas locales. Confirmar la primera escritura real desde ambas sesiones.
 
-- Student interface: French
-- Parent dashboard: Spanish
-- Backend: Supabase
-- Hosting: Cloudflare Workers
+## Privacidad y operación
+Sin scripts de terceros, identificación en URL, almacenamiento del navegador ni envío a modelos de IA. Los formularios piden solo información matemática. Se guarda un cuaderno pseudónimo en una tabla con RLS, sin permisos para anon ni authenticated. Evitar activar registros de cuerpos de solicitud. El Worker no registra respuestas. Para borrar el cuaderno completo, un administrador autorizado puede ejecutar DELETE FROM public.pablo_observations en el proyecto de Pablo; esto reinicia el recorrido. Revisar también la retención de copias de seguridad del proyecto. No probar con respuestas ficticias en producción.
